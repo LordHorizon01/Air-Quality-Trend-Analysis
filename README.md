@@ -8,9 +8,9 @@ The dataset used in this project contains readings of various harmful gases such
 
 Our goal is to perform a structured analysis of the data to understand:
 
-• What pollutants are most dominant
-• How environmental conditions affect pollutant levels
-• When and why sudden changes in air quality occur
+• What pollutants are most dominant?
+• How environmental conditions affect pollutant levels?
+• When and why sudden changes in air quality occur?
 • Long-term trends in pollution concentration
 
 This project helps in building a deeper understanding of real-world environmental data and the scientific reasoning behind air quality variations using data analysis techniques.
