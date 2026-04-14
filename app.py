@@ -78,8 +78,8 @@ filtered_df = filtered_df[
 ]
 
 model_option = st.sidebar.selectbox(
-    "Forecast Model",
-    ["Naive", "Moving Average", "Linear Regression"]
+    "Models Used",
+    ["Naive", "Moving Average"]
 )
 
 
