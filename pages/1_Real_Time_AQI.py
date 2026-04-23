@@ -52,7 +52,7 @@ selected_location = None
 
 # CITY SEARCH 
 if city_input and API_KEY:
-    geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_input}&limit=5&appid={API_KEY}"
+    geo_url = f"https://api.openweathermap.org/geo/1.0/direct?q={city_input}&limit=5&appid={API_KEY}"
     geo_response = requests.get(geo_url).json()
 
     if isinstance(geo_response, list) and len(geo_response) > 0:
@@ -80,7 +80,7 @@ with col1:
         if not st.session_state.lat:
             st.error("Select location or click on map ❌")
         else:
-            aqi_url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={st.session_state.lat}&lon={st.session_state.lon}&appid={API_KEY}"
+            aqi_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={st.session_state.lat}&lon={st.session_state.lon}&appid={API_KEY}"
             data = requests.get(aqi_url).json()
 
             if "list" in data:
@@ -192,7 +192,7 @@ if map_data and map_data.get("last_clicked"):
 
         # Reverse geocoding 
         try:
-            reverse_url = f"http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit=1&appid={API_KEY}"
+            reverse_url = f"https://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit=1&appid={API_KEY}"
             res = requests.get(reverse_url).json()
 
             if isinstance(res, list) and len(res) > 0:
