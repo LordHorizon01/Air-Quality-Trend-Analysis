@@ -133,36 +133,55 @@ if st.session_state.aqi_data:
     st.markdown(f"""
     <div style="
         background:{color};
-        padding:20px;
-        border-radius:12px;
+        padding:25px 20px;
+        border-radius:18px;
         color:black;
         text-align:center;
-        position: relative;
+        margin-top:10px;
+        box-shadow:0 6px 18px rgba(0,0,0,0.15);
     ">
 
-    <div style="
-        position: absolute;
-        top:10px;
-        left:15px;
-        background:white;
-        padding:6px 14px;
-        border-radius:12px;
-        font-weight:bold;
-        font-size:30px;
-    ">
-        AQI value lies between: {aqi_range}
-    </div>
+        <div style="
+            background:white;
+            padding:10px;
+            border-radius:12px;
+            font-weight:700;
+            font-size:20px;
+            margin-bottom:18px;
+        ">
+            AQI Value Lies Between: {aqi_range}
+        </div>
 
-    <h2>{st.session_state.city_input.upper()}</h2>
-    <h1>AQI Category: {aqi}</h1>
-    <h3>{category}</h3>
+        <div style="
+            font-size:22px;
+            font-weight:700;
+            margin-bottom:12px;
+            word-wrap:break-word;
+        ">
+            {st.session_state.city_input.upper()}
+        </div>
+
+        <div style="
+            font-size:42px;
+            font-weight:900;
+            margin-bottom:10px;
+        ">
+            AQI Category: {aqi}
+        </div>
+
+        <div style="
+            font-size:30px;
+            font-weight:700;
+        ">
+            {category}
+        </div>
 
     </div>
     """, unsafe_allow_html=True)
 
     st.progress(aqi / 5)
 
-    st.markdown("### 🧪 Pollutants")
+    st.markdown("## 🧪 Pollutants")
 
     c1, c2 = st.columns(2)
 
@@ -176,7 +195,6 @@ if st.session_state.aqi_data:
         st.metric("O3", round(components["o3"], 2))
         st.metric("SO2", round(components["so2"], 2))
         st.metric("NH3", round(components["nh3"], 2))
-
 # ---------------- MAP ----------------
 st.markdown("### 🗺️ Click Anywhere on Map")
 
