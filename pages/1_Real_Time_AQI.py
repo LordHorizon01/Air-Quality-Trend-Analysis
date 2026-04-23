@@ -140,18 +140,18 @@ if st.session_state.aqi_data:
         position:relative;
     ">
 
-        <div style="
-            position:absolute;
-            top:12px;
-            left:15px;
-            background:white;
-            padding:8px 14px;
-            border-radius:10px;
-            font-weight:bold;
-            font-size:14px;
-        ">
-            AQI Range: {aqi_range}
-        </div>
+    <div style="
+        position:absolute;
+        top:12px;
+        left:15px;
+        background:white;
+        padding:8px 14px;
+        border-radius:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+        AQI value lies between: {aqi_range}
+    </div>
 
         <h2>{st.session_state.city_input.upper()}</h2>
         <h1>AQI Category: {aqi}</h1>
