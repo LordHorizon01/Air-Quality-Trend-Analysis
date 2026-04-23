@@ -137,10 +137,11 @@ if st.session_state.aqi_data:
         border-radius:12px;
         color:black;
         text-align:center;
+        position: relative;
     ">
 
     <div style="
-        
+        position: absolute;
         top:10px;
         left:15px;
         background:white;
