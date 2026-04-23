@@ -14,17 +14,17 @@ st.title("🌍 Real-Time Air Quality Index")
 st.markdown("Check real-time AQI and pollutant levels for any city or click on map")
 
 # ---------------- SESSION STATE ----------------
-if "city_input" not in st.session_state:
-    st.session_state.city_input = "Delhi"
+defaults = {
+    "city_input": "Delhi",
+    "lat": None,
+    "lon": None,
+    "aqi_data": None,
+    "last_click": None
+}
 
-if "lat" not in st.session_state:
-    st.session_state.lat = None
-
-if "lon" not in st.session_state:
-    st.session_state.lon = None
-
-if "aqi_data" not in st.session_state:
-    st.session_state.aqi_data = None
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 # ---------------- FUNCTIONS ----------------
 def get_aqi_info(aqi):
@@ -36,7 +36,6 @@ def get_aqi_info(aqi):
         5: ("Very Poor", "#ff0000")
     }.get(aqi, ("Unknown", "#cccccc"))
 
-
 def get_aqi_range(aqi):
     return {
         1: "0 - 50",
@@ -46,17 +45,24 @@ def get_aqi_range(aqi):
         5: "301 - 500"
     }.get(aqi, "Unknown")
 
+def fetch_aqi(lat, lon):
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+        data = requests.get(url).json()
+        if "list" in data:
+            st.session_state.aqi_data = data
+    except:
+        pass
 
 # ---------------- INPUT ----------------
-if "city_box" not in st.session_state:
-    st.session_state.city_box = st.session_state.city_input
-
 city_input = st.text_input(
     "🏙️ Enter City Name",
-    key="city_box"
+    value=st.session_state.city_input
 )
 
 st.session_state.city_input = city_input
+selected_location = None
+selected_label = ""
 
 # ---------------- CITY SEARCH ----------------
 if city_input.strip():
@@ -74,8 +80,7 @@ if city_input.strip():
 
             selected_label = st.selectbox(
                 "📍 Select Location",
-                [x[0] for x in options],
-                key="location_select"
+                [x[0] for x in options]
             )
 
             for label, loc in options:
@@ -97,27 +102,18 @@ with col1:
             st.session_state.lon = selected_location["lon"]
             st.session_state.city_input = selected_label
 
-        if st.session_state.lat is None or st.session_state.lon is None:
+        if st.session_state.lat is None:
             st.error("Select location or click on map ❌")
-
         else:
-            try:
-                aqi_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={st.session_state.lat}&lon={st.session_state.lon}&appid={API_KEY}"
-                data = requests.get(aqi_url).json()
-
-                if "list" in data:
-                    st.session_state.aqi_data = data
-                else:
-                    st.error("Failed to fetch AQI ❌")
-
-            except:
-                st.error("API Error ❌")
+            fetch_aqi(st.session_state.lat, st.session_state.lon)
 
 with col2:
     if st.button("🔄 Refresh"):
-        st.session_state.aqi_data = None
+        st.session_state.city_input = "Delhi"
         st.session_state.lat = None
         st.session_state.lon = None
+        st.session_state.aqi_data = None
+        st.session_state.last_click = None
         st.rerun()
 
 # ---------------- AQI DISPLAY ----------------
@@ -195,10 +191,11 @@ if st.session_state.aqi_data:
         st.metric("O3", round(components["o3"], 2))
         st.metric("SO2", round(components["so2"], 2))
         st.metric("NH3", round(components["nh3"], 2))
+
 # ---------------- MAP ----------------
 st.markdown("### 🗺️ Click Anywhere on Map")
 
-if st.session_state.lat is not None and st.session_state.lon is not None:
+if st.session_state.lat is not None:
     center = [st.session_state.lat, st.session_state.lon]
     zoom = 5
 else:
@@ -208,19 +205,16 @@ else:
 m = folium.Map(
     location=center,
     zoom_start=zoom,
-    tiles="CartoDB positron",
-    max_bounds=True
+    tiles="CartoDB positron"
 )
 
-# Marker
-if st.session_state.lat is not None and st.session_state.lon is not None:
+if st.session_state.lat is not None:
     folium.Marker(
         [st.session_state.lat, st.session_state.lon],
         tooltip="Selected Location",
         icon=folium.Icon(color="red")
     ).add_to(m)
 
-# Render map
 map_data = st_folium(
     m,
     height=550,
@@ -228,21 +222,18 @@ map_data = st_folium(
     returned_objects=["last_clicked"]
 )
 
-
 # ---------------- MAP CLICK ----------------
 if map_data and map_data.get("last_clicked"):
 
-    lat = map_data["last_clicked"]["lat"]
-    lon = map_data["last_clicked"]["lng"]
+    lat = round(map_data["last_clicked"]["lat"], 4)
+    lon = round(map_data["last_clicked"]["lng"], 4)
 
-    # ignore same click / double click
-    if (
-        st.session_state.lat is None
-        or st.session_state.lon is None
-        or round(st.session_state.lat, 4) != round(lat, 4)
-        or round(st.session_state.lon, 4) != round(lon, 4)
-    ):
+    current_click = (lat, lon)
 
+    # prevents double click same place error
+    if current_click != st.session_state.last_click:
+
+        st.session_state.last_click = current_click
         st.session_state.lat = lat
         st.session_state.lon = lon
 
@@ -251,7 +242,6 @@ if map_data and map_data.get("last_clicked"):
             res = requests.get(reverse_url).json()
 
             if isinstance(res, list) and len(res) > 0:
-
                 place = res[0]
 
                 name = place.get("name", "")
@@ -264,27 +254,14 @@ if map_data and map_data.get("last_clicked"):
 
                 if full_location.strip():
                     st.session_state.city_input = full_location
-                    st.session_state.city_box = full_location
+                else:
+                    st.session_state.city_input = f"{lat}, {lon}"
 
             else:
-                coords = f"{lat:.4f}, {lon:.4f}"
-                st.session_state.city_input = coords
-                st.session_state.city_box = coords
+                st.session_state.city_input = f"{lat}, {lon}"
 
         except:
-            coords = f"{lat:.4f}, {lon:.4f}"
-            st.session_state.city_input = coords
-            st.session_state.city_box = coords
+            st.session_state.city_input = f"{lat}, {lon}"
 
-        # auto fetch AQI
-        try:
-            aqi_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
-            data = requests.get(aqi_url).json()
-
-            if "list" in data:
-                st.session_state.aqi_data = data
-
-        except:
-            pass
-
+        fetch_aqi(lat, lon)
         st.rerun()
