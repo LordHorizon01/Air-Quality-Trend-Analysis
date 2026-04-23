@@ -133,29 +133,28 @@ if st.session_state.aqi_data:
     st.markdown(f"""
     <div style="
         background:{color};
-        padding:25px;
-        border-radius:15px;
+        padding:20px;
+        border-radius:12px;
         color:black;
         text-align:center;
-        position:relative;
     ">
 
     <div style="
-        position:absolute;
-        top:12px;
+        
+        top:10px;
         left:15px;
         background:white;
-        padding:8px 14px;
-        border-radius:10px;
+        padding:6px 14px;
+        border-radius:12px;
         font-weight:bold;
-        font-size:14px;
+        font-size:30px;
     ">
         AQI value lies between: {aqi_range}
     </div>
 
-        <h2>{st.session_state.city_input.upper()}</h2>
-        <h1>AQI Category: {aqi}</h1>
-        <h3>{category}</h3>
+    <h2>{st.session_state.city_input.upper()}</h2>
+    <h1>AQI Category: {aqi}</h1>
+    <h3>{category}</h3>
 
     </div>
     """, unsafe_allow_html=True)
@@ -227,15 +226,24 @@ if map_data and map_data.get("last_clicked"):
 
             if isinstance(res, list) and len(res) > 0:
                 place = res[0]
+
                 name = place.get("name", "")
                 state = place.get("state", "")
                 country = place.get("country", "")
 
-                st.session_state.city_input = f"{name}, {state}, {country}"
+                place_name = f"{name}, {state}, {country}".replace(" ,", "").replace(",,", ",")
+
+                st.session_state.city_input = place_name
+                st.session_state.city_box = place_name
+
             else:
-                st.session_state.city_input = f"{lat:.4f}, {lon:.4f}"
+                coords = f"{lat:.4f}, {lon:.4f}"
+                st.session_state.city_input = coords
+                st.session_state.city_box = coords
 
         except:
-            st.session_state.city_input = f"{lat:.4f}, {lon:.4f}"
+            coords = f"{lat:.4f}, {lon:.4f}"
+            st.session_state.city_input = coords
+            st.session_state.city_box = coords
 
         st.rerun()
