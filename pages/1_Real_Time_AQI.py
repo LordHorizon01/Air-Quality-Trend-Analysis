@@ -141,40 +141,40 @@ if st.session_state.aqi_data:
         box-shadow:0 6px 18px rgba(0,0,0,0.15);
     ">
 
-        <div style="
-            background:white;
-            padding:10px;
-            border-radius:12px;
-            font-weight:700;
-            font-size:20px;
-            margin-bottom:18px;
-        ">
-            AQI Value Lies Between: {aqi_range}
-        </div>
+    <div style="
+        background:white;
+        padding:10px;
+        border-radius:12px;
+        font-weight:700;
+        font-size:20px;
+        margin-bottom:18px;
+    ">
+        AQI Value Lies Between: {aqi_range}
+    </div>
 
-        <div style="
-            font-size:22px;
-            font-weight:700;
-            margin-bottom:12px;
-            word-wrap:break-word;
-        ">
-            {st.session_state.city_input.upper()}
-        </div>
+    <div style="
+        font-size:22px;
+        font-weight:700;
+        margin-bottom:12px;
+        word-wrap:break-word;
+    ">
+        {st.session_state.city_input.upper()}
+    </div>
 
-        <div style="
-            font-size:42px;
-            font-weight:900;
-            margin-bottom:10px;
-        ">
-            AQI Category: {aqi}
-        </div>
+    <div style="
+        font-size:42px;
+        font-weight:900;
+        margin-bottom:10px;
+    ">
+        AQI Category: {aqi}
+    </div>
 
-        <div style="
-            font-size:30px;
-            font-weight:700;
-        ">
-            {category}
-        </div>
+    <div style="
+        font-size:30px;
+        font-weight:700;
+    ">
+        {category}
+    </div>
 
     </div>
     """, unsafe_allow_html=True)
