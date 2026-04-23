@@ -229,11 +229,13 @@ map_data = st_folium(
 )
 
 # ---------------- MAP CLICK ----------------
+# ---------------- MAP CLICK ----------------
 if map_data and map_data.get("last_clicked"):
 
     lat = map_data["last_clicked"]["lat"]
     lon = map_data["last_clicked"]["lng"]
 
+    # only if new place clicked
     if st.session_state.lat != lat or st.session_state.lon != lon:
 
         st.session_state.lat = lat
@@ -244,25 +246,38 @@ if map_data and map_data.get("last_clicked"):
             res = requests.get(reverse_url).json()
 
             if isinstance(res, list) and len(res) > 0:
+
                 place = res[0]
 
                 name = place.get("name", "")
                 state = place.get("state", "")
                 country = place.get("country", "")
 
-                place_name = f"{name}, {state}, {country}".replace(" ,", "").replace(",,", ",")
+                # full selected location
+                full_location = ", ".join(
+                    x for x in [name, state, country] if x
+                )
 
-                st.session_state.city_input = place_name
-                st.session_state.city_box = place_name
+                # update session values ONLY
+                st.session_state.city_input = full_location
 
             else:
                 coords = f"{lat:.4f}, {lon:.4f}"
                 st.session_state.city_input = coords
-                st.session_state.city_box = coords
 
         except:
             coords = f"{lat:.4f}, {lon:.4f}"
             st.session_state.city_input = coords
-            st.session_state.city_box = coords
+
+        # fetch AQI instantly after map click
+        try:
+            aqi_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+            data = requests.get(aqi_url).json()
+
+            if "list" in data:
+                st.session_state.aqi_data = data
+
+        except:
+            pass
 
         st.rerun()
