@@ -48,15 +48,15 @@ def get_aqi_range(aqi):
 
 
 # ---------------- INPUT ----------------
+if "city_box" not in st.session_state:
+    st.session_state.city_box = st.session_state.city_input
+
 city_input = st.text_input(
     "🏙️ Enter City Name",
-    value=st.session_state.city_input,
     key="city_box"
 )
 
 st.session_state.city_input = city_input
-
-selected_location = None
 
 # ---------------- CITY SEARCH ----------------
 if city_input.strip():
@@ -228,15 +228,20 @@ map_data = st_folium(
     returned_objects=["last_clicked"]
 )
 
-# ---------------- MAP CLICK ----------------
+
 # ---------------- MAP CLICK ----------------
 if map_data and map_data.get("last_clicked"):
 
     lat = map_data["last_clicked"]["lat"]
     lon = map_data["last_clicked"]["lng"]
 
-    # only if new place clicked
-    if st.session_state.lat != lat or st.session_state.lon != lon:
+    # ignore same click / double click
+    if (
+        st.session_state.lat is None
+        or st.session_state.lon is None
+        or round(st.session_state.lat, 4) != round(lat, 4)
+        or round(st.session_state.lon, 4) != round(lon, 4)
+    ):
 
         st.session_state.lat = lat
         st.session_state.lon = lon
@@ -253,23 +258,25 @@ if map_data and map_data.get("last_clicked"):
                 state = place.get("state", "")
                 country = place.get("country", "")
 
-                # full selected location
                 full_location = ", ".join(
                     x for x in [name, state, country] if x
                 )
 
-                # update session values ONLY
-                st.session_state.city_input = full_location
+                if full_location.strip():
+                    st.session_state.city_input = full_location
+                    st.session_state.city_box = full_location
 
             else:
                 coords = f"{lat:.4f}, {lon:.4f}"
                 st.session_state.city_input = coords
+                st.session_state.city_box = coords
 
         except:
             coords = f"{lat:.4f}, {lon:.4f}"
             st.session_state.city_input = coords
+            st.session_state.city_box = coords
 
-        # fetch AQI instantly after map click
+        # auto fetch AQI
         try:
             aqi_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
             data = requests.get(aqi_url).json()
