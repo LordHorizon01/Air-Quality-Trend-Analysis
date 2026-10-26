@@ -53,43 +53,160 @@ def fetch_aqi(lat, lon):
             st.session_state.aqi_data = data
     except:
         pass
+# ---------------- AUTO SEARCH ON ENTER ----------------
+def search_city_and_fetch():
+    st.session_state.pop("map_selected_location", None)
+    query = st.session_state.city_search.strip()
 
+    if not query:
+        st.session_state.aqi_data = None
+        return
+
+    try:
+        geo_url = "https://api.openweathermap.org/geo/1.0/direct"
+
+        response = requests.get(
+            geo_url,
+            params={
+                "q": query,
+                "limit": 5,
+                "appid": API_KEY
+            },
+            timeout=15
+        )
+
+        response.raise_for_status()
+        locations = response.json()
+
+        if isinstance(locations, list) and locations:
+            # Automatically select the first matching city
+            place = locations[0]
+
+            lat = place["lat"]
+            lon = place["lon"]
+
+            name = place.get("name", "")
+            state = place.get("state", "")
+            country = place.get("country", "")
+
+            full_location = ", ".join(
+                x for x in [name, state, country] if x
+            )
+
+            st.session_state.city_input = full_location
+            st.session_state.lat = lat
+            st.session_state.lon = lon
+
+            # Automatically retrieve AQI
+            fetch_aqi(lat, lon)
+
+        else:
+            st.session_state.aqi_data = None
+            st.warning("No matching city found.")
+
+    except requests.exceptions.RequestException as error:
+        st.error(f"Unable to search city: {error}")
 # ---------------- INPUT ----------------
-city_input = st.text_input(
-    "🏙️ Enter City Name",
-    value=st.session_state.city_input
+if "city_search" not in st.session_state:
+    st.session_state.city_search = st.session_state.city_input
+
+pending_label = st.session_state.pop(
+    "pending_map_label", None
 )
 
-st.session_state.city_input = city_input
+if pending_label is not None:
+    st.session_state.city_search = pending_label
+
+city_input = st.text_input(
+    "🏙️ Enter City Name",
+    key="city_search",
+    placeholder="Enter city and press Enter",
+    on_change=search_city_and_fetch
+)
 selected_location = None
 selected_label = ""
 
 # ---------------- CITY SEARCH ----------------
-if city_input.strip():
+
+selected_location = None
+selected_label = ""
+options = []
+
+# Check whether the user selected a location through the map
+map_location = st.session_state.get("map_selected_location")
+
+# CASE 1: Location selected by clicking on the map
+if (
+    map_location is not None
+    and city_input.strip() == map_location["label"]
+):
+
+    # Preserve the exact coordinates selected on the map
+    options.append((
+        map_location["label"],
+        map_location
+    ))
+
+# CASE 2: Location entered manually in the search box
+elif city_input.strip():
 
     try:
-        geo_url = f"https://api.openweathermap.org/geo/1.0/direct?q={city_input}&limit=5&appid={API_KEY}"
-        geo_response = requests.get(geo_url).json()
+        geo_url = "https://api.openweathermap.org/geo/1.0/direct"
+
+        response = requests.get(
+            geo_url,
+            params={
+                "q": city_input,
+                "limit": 5,
+                "appid": API_KEY
+            },
+            timeout=15
+        )
+
+        response.raise_for_status()
+        geo_response = response.json()
 
         if isinstance(geo_response, list) and len(geo_response) > 0:
 
-            options = []
             for loc in geo_response:
-                label = f"{loc.get('name','')}, {loc.get('state','')}, {loc.get('country','')}"
+
+                name = loc.get("name", "")
+                state = loc.get("state", "")
+                country = loc.get("country", "")
+
+                # Create a readable location name
+                label = ", ".join(
+                    part for part in [name, state, country] if part
+                )
+
                 options.append((label, loc))
 
-            selected_label = st.selectbox(
-                "📍 Select Location",
-                [x[0] for x in options]
-            )
+    except requests.exceptions.RequestException as error:
+        st.warning(f"Unable to search location: {error}")
 
-            for label, loc in options:
-                if label == selected_label:
-                    selected_location = loc
-                    break
+# ---------------- LOCATION DROPDOWN ----------------
 
-    except:
-        pass
+if options:
+
+    selected_label = st.selectbox(
+        "📍 Select Location",
+        options=[item[0] for item in options]
+    )
+
+    # Retrieve the coordinates for the selected location
+    for label, loc in options:
+
+        if label == selected_label:
+
+            selected_location = loc
+            break
+
+elif city_input.strip():
+
+    st.info(
+        "No matching location found. "
+        "Try another city or select a location on the map."
+    )
 
 # ---------------- BUTTONS ----------------
 col1, col2 = st.columns(2)
@@ -205,8 +322,17 @@ else:
 m = folium.Map(
     location=center,
     zoom_start=zoom,
-    tiles="CartoDB positron"
+    tiles=None
 )
+
+folium.TileLayer(
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    attr="Tiles © Esri — Source: Esri and contributors",
+    name="Esri World Street Map",
+    overlay=False,
+    control=True,
+    max_zoom=19
+).add_to(m)
 
 if st.session_state.lat is not None:
     folium.Marker(
@@ -264,4 +390,15 @@ if map_data and map_data.get("last_clicked"):
             st.session_state.city_input = f"{lat}, {lon}"
 
         fetch_aqi(lat, lon)
+        st.session_state.map_selected_location = {
+            "label": st.session_state.city_input,
+            "lat": lat,
+            "lon": lon
+        }
+
+
+        st.session_state.pending_map_label = (
+            st.session_state.city_input
+        )
+
         st.rerun()
